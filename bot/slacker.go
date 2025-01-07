@@ -43,7 +43,11 @@ func (slacker *SlackAdapter) SendMessage(channel string, message map[string]stri
 	var msgBlocks []Block
 
 	if resource == "Release" || resource == "Rollout" {
-		msgBlocks = GetSlackMsg(message)
+		if shouldSendMessage(message) {
+			msgBlocks = GetSlackMsg(message)
+		} else {
+			return "", fmt.Errorf("message not sent")
+		}
 	} else {
 		return "", fmt.Errorf("resourceType not a Release or a Rollout")
 	}
@@ -54,6 +58,16 @@ func (slacker *SlackAdapter) SendMessage(channel string, message map[string]stri
 	}
 
 	return chatPostMessage(slacker.BotToken, channel, msgBlocks, slackApiPostMessage)
+}
+
+func shouldSendMessage(message map[string]string) bool {
+	action, _ := message["Action"]
+
+	if action != "Start" {
+		return true
+	} else {
+		return false
+	}
 }
 
 func chatPostMessage(token string, channel string, blockMessage []Block, url string) (string, error) {
